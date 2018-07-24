@@ -3,7 +3,6 @@
  *
  *  Copyright (C) 2003 Russell King, All Rights Reserved.
  *  Copyright 2006-2007 Pierre Ossman
- *  Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -22,7 +21,6 @@
 
 #include <linux/mmc/card.h>
 #include <linux/mmc/host.h>
-#include <linux/sched/rt.h>
 #include "queue.h"
 
 #define MMC_QUEUE_BOUNCESZ	65536
@@ -144,11 +142,6 @@ static int mmc_queue_thread(void *d)
 	struct mmc_queue *mq = d;
 	struct request_queue *q = mq->queue;
 	struct mmc_card *card = mq->card;
-
-        struct sched_param scheduler_params = {0};
-        scheduler_params.sched_priority = 1;
-
-        sched_setscheduler(current, SCHED_FIFO, &scheduler_params);
 
 	current->flags |= PF_MEMALLOC;
 	if (card->host->wakeup_on_idle)
@@ -302,7 +295,6 @@ void mmc_cmdq_setup_queue(struct mmc_queue *mq, struct mmc_card *card)
 		limit = *mmc_dev(host)->dma_mask;
 
 	queue_flag_set_unlocked(QUEUE_FLAG_NONROT, mq->queue);
-	queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, mq->queue);
 	if (mmc_can_erase(card))
 		mmc_queue_setup_discard(mq->queue, card);
 
@@ -754,7 +746,7 @@ int mmc_queue_suspend(struct mmc_queue *mq, int wait)
 	}
 
 	if (!(test_and_set_bit(MMC_QUEUE_SUSPENDED, &mq->flags))) {
-				if (!wait) {
+		if (!wait) {
 			/* suspend/stop the queue in case of suspend */
 			spin_lock_irqsave(q->queue_lock, flags);
 			blk_stop_queue(q);
@@ -763,6 +755,7 @@ int mmc_queue_suspend(struct mmc_queue *mq, int wait)
 			/* shutdown the queue in case of shutdown/reboot */
 			blk_cleanup_queue(q);
 		}
+
 		rc = down_trylock(&mq->thread_sem);
 		if (rc && !wait) {
 			/*

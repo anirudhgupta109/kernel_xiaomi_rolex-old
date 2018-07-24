@@ -40,8 +40,6 @@
 #define PCI_DEVICE_ID_INTEL_CHERRYVIEW_XHCI		0x22b5
 #define PCI_DEVICE_ID_INTEL_SUNRISEPOINT_H_XHCI		0xa12f
 #define PCI_DEVICE_ID_INTEL_SUNRISEPOINT_LP_XHCI	0x9d2f
-#define PCI_DEVICE_ID_INTEL_BROXTON_M_XHCI		0x0aa8
-#define PCI_DEVICE_ID_INTEL_BROXTON_B_XHCI		0x1aa8
 
 static const char hcd_name[] = "xhci_hcd";
 
@@ -141,9 +139,7 @@ static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
 	if (pdev->vendor == PCI_VENDOR_ID_INTEL &&
 		(pdev->device == PCI_DEVICE_ID_INTEL_SUNRISEPOINT_LP_XHCI ||
 		 pdev->device == PCI_DEVICE_ID_INTEL_SUNRISEPOINT_H_XHCI ||
-		 pdev->device == PCI_DEVICE_ID_INTEL_CHERRYVIEW_XHCI ||
-		 pdev->device == PCI_DEVICE_ID_INTEL_BROXTON_M_XHCI ||
-		 pdev->device == PCI_DEVICE_ID_INTEL_BROXTON_B_XHCI)) {
+		 pdev->device == PCI_DEVICE_ID_INTEL_CHERRYVIEW_XHCI)) {
 		xhci->quirks |= XHCI_PME_STUCK_QUIRK;
 	}
 	if (pdev->vendor == PCI_VENDOR_ID_ETRON &&
@@ -152,6 +148,9 @@ static void xhci_pci_quirks(struct device *dev, struct xhci_hcd *xhci)
 		xhci->quirks |= XHCI_TRUST_TX_LENGTH;
 		xhci->quirks |= XHCI_BROKEN_STREAMS;
 	}
+	if (pdev->vendor == PCI_VENDOR_ID_RENESAS &&
+			pdev->device == 0x0014)
+		xhci->quirks |= XHCI_TRUST_TX_LENGTH;
 	if (pdev->vendor == PCI_VENDOR_ID_RENESAS &&
 			pdev->device == 0x0015)
 		xhci->quirks |= XHCI_RESET_ON_RESUME;

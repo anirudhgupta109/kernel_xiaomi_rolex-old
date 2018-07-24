@@ -1,4 +1,4 @@
-/* Copyright (c) 2013-2016, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2013-2018, The Linux Foundation. All rights reserved.
  * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -306,8 +306,9 @@ static void msm_restart_prepare(const char *cmd)
 			!strcmp(cmd, "edl")))
 			need_warm_reset = true;
 	} else {
-		need_warm_reset = (get_dload_mode() || in_panic ||
-				(cmd != NULL && cmd[0] != '\0'));
+		need_warm_reset = (get_dload_mode() ||
+				((cmd != NULL && cmd[0] != '\0') &&
+				strcmp(cmd, "userrequested")));
 	}
 
 #ifdef CONFIG_MSM_PRESERVE_MEM

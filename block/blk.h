@@ -24,10 +24,10 @@ struct blk_flush_queue {
 	struct request		*flush_rq;
 
 	/*
-	* flush_rq shares tag with this rq, both can't be active
-	* at the same time
-	*/
-	struct request      *orig_rq;
+	 * flush_rq shares tag with this rq, both can't be active
+	 * at the same time
+	 */
+	struct request		*orig_rq;
 	spinlock_t		mq_flush_lock;
 };
 

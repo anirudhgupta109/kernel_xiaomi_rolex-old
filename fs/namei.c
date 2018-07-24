@@ -2524,7 +2524,7 @@ struct dentry *lock_rename(struct dentry *p1, struct dentry *p2)
 {
 	struct dentry *p;
 
-	if (p1 == p2 || p1->d_inode == p2->d_inode) {
+	if (p1 == p2) {
 		mutex_lock_nested(&p1->d_inode->i_mutex, I_MUTEX_PARENT);
 		return NULL;
 	}
@@ -3521,10 +3521,10 @@ retry:
 		goto out;
 	switch (mode & S_IFMT) {
 		case 0: case S_IFREG:
-			error = vfs_create2(path.mnt, path.dentry->d_inode, dentry, mode, true);
+			error = vfs_create2(path.mnt, path.dentry->d_inode,dentry,mode,true);
 			break;
 		case S_IFCHR: case S_IFBLK:
-			error = vfs_mknod2(path.mnt, path.dentry->d_inode, dentry, mode,
+			error = vfs_mknod2(path.mnt, path.dentry->d_inode,dentry,mode,
 					new_decode_dev(dev));
 			break;
 		case S_IFIFO: case S_IFSOCK:
@@ -3669,6 +3669,8 @@ out:
 		d_delete(dentry);
 	return error;
 }
+EXPORT_SYMBOL(vfs_rmdir2);
+
 int vfs_rmdir(struct inode *dir, struct dentry *dentry)
 {
 	return vfs_rmdir2(NULL, dir, dentry);
@@ -4171,11 +4173,11 @@ int vfs_rename2(struct vfsmount *mnt,
 {
 	int error;
 	bool is_dir = d_is_dir(old_dentry);
-	const unsigned char *old_name;
 	struct inode *source = old_dentry->d_inode;
 	struct inode *target = new_dentry->d_inode;
 	bool new_is_dir = false;
 	unsigned max_links = new_dir->i_sb->s_max_links;
+	struct name_snapshot old_name;
 
 	if (source == target)
 		return 0;
@@ -4225,7 +4227,7 @@ int vfs_rename2(struct vfsmount *mnt,
 	if (error)
 		return error;
 
-	old_name = fsnotify_oldname_init(old_dentry->d_name.name);
+	take_dentry_name_snapshot(&old_name, old_dentry);
 	dget(new_dentry);
 	if (!is_dir || (flags & RENAME_EXCHANGE))
 		lock_two_nondirectories(source, target);
@@ -4286,14 +4288,14 @@ out:
 		mutex_unlock(&target->i_mutex);
 	dput(new_dentry);
 	if (!error) {
-		fsnotify_move(old_dir, new_dir, old_name, is_dir,
+		fsnotify_move(old_dir, new_dir, old_name.name, is_dir,
 			      !(flags & RENAME_EXCHANGE) ? target : NULL, old_dentry);
 		if (flags & RENAME_EXCHANGE) {
 			fsnotify_move(new_dir, old_dir, old_dentry->d_name.name,
 				      new_is_dir, NULL, new_dentry);
 		}
 	}
-	fsnotify_oldname_free(old_name);
+	release_dentry_name_snapshot(&old_name);
 
 	return error;
 }

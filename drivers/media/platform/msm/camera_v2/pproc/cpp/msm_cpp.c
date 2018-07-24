@@ -1,5 +1,4 @@
 /* Copyright (c) 2013-2017, The Linux Foundation. All rights reserved.
- * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -121,6 +120,8 @@ static void msm_cpp_set_micro_irq_mask(struct cpp_device *cpp_dev,
 static void msm_cpp_flush_queue_and_release_buffer(struct cpp_device *cpp_dev,
 	int queue_len);
 static int msm_cpp_dump_frame_cmd(struct msm_cpp_frame_info_t *frame_info);
+static int msm_cpp_dump_addr(struct cpp_device *cpp_dev,
+	struct msm_cpp_frame_info_t *frame_info);
 static int32_t msm_cpp_reset_vbif_and_load_fw(struct cpp_device *cpp_dev);
 
 #if CONFIG_MSM_CPP_DBG
@@ -663,6 +664,7 @@ static int32_t msm_cpp_poll_rx_empty(void __iomem *cpp_base)
 	}
 	return rc;
 }
+
 static int msm_cpp_dump_addr(struct cpp_device *cpp_dev,
 	struct msm_cpp_frame_info_t *frame_info)
 {
@@ -760,9 +762,7 @@ static void msm_cpp_iommu_fault_handler(struct iommu_domain *domain,
 		}
 		mutex_lock(&cpp_dev->mutex);
 		tasklet_kill(&cpp_dev->cpp_tasklet);
-
-				rc = cpp_load_fw(cpp_dev, cpp_dev->fw_name_bin);
-
+		rc = cpp_load_fw(cpp_dev, cpp_dev->fw_name_bin);
 		if (rc < 0) {
 			pr_err("load fw failure %d-retry\n", rc);
 			rc = msm_cpp_reset_vbif_and_load_fw(cpp_dev);
@@ -796,6 +796,7 @@ static void msm_cpp_iommu_fault_handler(struct iommu_domain *domain,
 		mutex_unlock(&cpp_dev->mutex);
 	}
 }
+
 static int cpp_init_mem(struct cpp_device *cpp_dev)
 {
 	int rc = 0;
@@ -811,12 +812,9 @@ static int cpp_init_mem(struct cpp_device *cpp_dev)
 		return -ENODEV;
 
 	cpp_dev->iommu_hdl = iommu_hdl;
-
 	cam_smmu_reg_client_page_fault_handler(
 			cpp_dev->iommu_hdl,
 			msm_cpp_iommu_fault_handler, cpp_dev);
-
-
 	return 0;
 }
 
@@ -4321,7 +4319,7 @@ static int cpp_probe(struct platform_device *pdev)
 	cpp_dev->state = CPP_STATE_BOOT;
 	rc = cpp_init_hardware(cpp_dev);
 	if (rc < 0)
-		goto cpp_probe_init_error;
+		goto bus_de_init;
 
 	media_entity_init(&cpp_dev->msm_sd.sd.entity, 0, NULL, 0);
 	cpp_dev->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
@@ -4360,7 +4358,7 @@ static int cpp_probe(struct platform_device *pdev)
 	if (!cpp_dev->work) {
 		pr_err("no enough memory\n");
 		rc = -ENOMEM;
-		goto cpp_probe_init_error;
+		goto bus_de_init;
 	}
 
 	INIT_WORK((struct work_struct *)cpp_dev->work, msm_cpp_do_timeout_work);
@@ -4380,6 +4378,12 @@ static int cpp_probe(struct platform_device *pdev)
 	else
 		CPP_DBG("FAILED.");
 	return rc;
+
+bus_de_init:
+	if (cpp_dev->bus_master_flag)
+		msm_cpp_deinit_bandwidth_mgr(cpp_dev);
+	else
+		msm_isp_deinit_bandwidth_mgr(ISP_CPP);
 cpp_probe_init_error:
 	media_entity_cleanup(&cpp_dev->msm_sd.sd.entity);
 	msm_sd_unregister(&cpp_dev->msm_sd);

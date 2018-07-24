@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2016, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2014-2016, 2018 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -14,6 +14,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/device.h>
+#include <linux/kernel.h>
 #include <linux/err.h>
 #include <linux/sched.h>
 #include <linux/ratelimit.h>
@@ -213,33 +214,24 @@ static void usb_connect_work_fn(struct work_struct *work)
  * and synchronously when Diag wants to disconnect from USB
  * explicitly.
  */
-static void __usb_disconnect(struct diag_usb_info *ch, int skip)
-{
-	if (!ch)
-		return;
-
-	WARN_ON(skip && !atomic_read(&ch->connected) && driver->usb_connected);
-
-	if (!skip && !atomic_read(&ch->connected) && driver->usb_connected)
-		diag_clear_masks(NULL);
-
-	if (ch && ch->ops && ch->ops->close)
-		ch->ops->close(ch->ctxt, DIAG_USB_MODE);
-}
-
 static void usb_disconnect(struct diag_usb_info *ch)
 {
 	if (!ch)
 		return;
 
-	__usb_disconnect(ch, ch->closing);
+	if (!atomic_read(&ch->connected) &&
+		driver->usb_connected && diag_mask_param())
+		diag_clear_masks(0);
+
+	if (ch && ch->ops && ch->ops->close)
+		ch->ops->close(ch->ctxt, DIAG_USB_MODE);
 }
 
 static void usb_disconnect_work_fn(struct work_struct *work)
 {
 	struct diag_usb_info *ch = container_of(work, struct diag_usb_info,
 						disconnect_work);
-	__usb_disconnect(ch, 0);
+	usb_disconnect(ch);
 }
 
 static void usb_read_work_fn(struct work_struct *work)
@@ -364,14 +356,12 @@ static void diag_usb_notifier(void *priv, unsigned event,
 	switch (event) {
 	case USB_DIAG_CONNECT:
 		usb_info->max_size = usb_diag_request_size(usb_info->hdl);
-		usb_info->closing = 0;
 		atomic_set(&usb_info->connected, 1);
 		pr_info("diag: USB channel %s connected\n", usb_info->name);
 		queue_work(usb_info->usb_wq,
 			   &usb_info->connect_work);
 		break;
 	case USB_DIAG_DISCONNECT:
-		usb_info->closing = 1;
 		atomic_set(&usb_info->connected, 0);
 		pr_info("diag: USB channel %s disconnected\n", usb_info->name);
 		queue_work(usb_info->usb_wq,

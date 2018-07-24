@@ -856,7 +856,6 @@ static uint16_t fusion_read_id_ov13855(struct msm_sensor_ctrl_t *s_ctrl)
 	return 0;
 }
 
-
 /* static function definition */
 int32_t msm_sensor_driver_probe(void *setting,
 	struct msm_sensor_info_t *probed_info, char *entity_name)
@@ -948,6 +947,21 @@ int32_t msm_sensor_driver_probe(void *setting,
 		}
 	}
 
+	if (strlen(slave_info->sensor_name) >= MAX_SENSOR_NAME ||
+		strlen(slave_info->eeprom_name) >= MAX_SENSOR_NAME ||
+		strlen(slave_info->actuator_name) >= MAX_SENSOR_NAME ||
+		strlen(slave_info->ois_name) >= MAX_SENSOR_NAME) {
+		pr_err("failed: name len greater than 32.\n");
+		pr_err("sensor name len:%zu, eeprom name len: %zu.\n",
+			strlen(slave_info->sensor_name),
+			strlen(slave_info->eeprom_name));
+		pr_err("actuator name len: %zu, ois name len:%zu.\n",
+			strlen(slave_info->actuator_name),
+			strlen(slave_info->ois_name));
+		rc = -EINVAL;
+		goto free_slave_info;
+	}
+
 	/* Print slave info */
 	CDBG("camera id %d Slave addr 0x%X addr_type %d\n",
 		slave_info->camera_id, slave_info->slave_addr,
@@ -971,7 +985,6 @@ int32_t msm_sensor_driver_probe(void *setting,
 		rc = -EINVAL;
 		goto free_slave_info;
 	}
-
 
 	if (!strcmp(slave_info->sensor_name, "s5k3l8_ofilm")) {
 		if (main_module_id != 7) {
@@ -1676,3 +1689,4 @@ module_init(msm_sensor_driver_init);
 module_exit(msm_sensor_driver_exit);
 MODULE_DESCRIPTION("msm_sensor_driver");
 MODULE_LICENSE("GPL v2");
+

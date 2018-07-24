@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
  * Copyright (C) 2018 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1458,7 +1458,7 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 	if (!q6core_is_adsp_ready()) {
 		pr_err("%s(): adsp not ready\n", __func__);
 		return -EINVAL;
-		}
+	}
 
 	/*
 	 * configure the slave select to
@@ -1510,6 +1510,7 @@ static int msm_mi2s_snd_startup(struct snd_pcm_substream *substream)
 
 	return ret;
 }
+
 static void msm_mi2s_snd_shutdown(struct snd_pcm_substream *substream)
 {
 	int ret;
@@ -1553,7 +1554,7 @@ static int msm_prim_auxpcm_startup(struct snd_pcm_substream *substream)
 	if (!q6core_is_adsp_ready()) {
 		pr_err("%s(): adsp not ready\n", __func__);
 		return -EINVAL;
-		}
+	}
 
 	/* mux config to route the AUX MI2S */
 	if (pdata->vaddr_gpio_mux_mic_ctl) {
@@ -2607,6 +2608,81 @@ static struct snd_soc_dai_link msm8952_dai[] = {
 		/* this dai link has playback support */
 		.ignore_pmdown_time = 1,
 		.be_id = MSM_FRONTEND_DAI_QCHAT,
+	},
+	{/* hw:x,38 */
+		.name = "MSM8X16 Compress10",
+		.stream_name = "Compress10",
+		.cpu_dai_name	= "MultiMedia17",
+		.platform_name  = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			 SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA17,
+	},
+	{/* hw:x,39 */
+		.name = "MSM8X16 Compress11",
+		.stream_name = "Compress11",
+		.cpu_dai_name	= "MultiMedia18",
+		.platform_name  = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			 SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA18,
+	},
+	{/* hw:x,40 */
+		.name = "MSM8X16 Compress12",
+		.stream_name = "Compress12",
+		.cpu_dai_name	= "MultiMedia19",
+		.platform_name  = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			 SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA19,
+	},
+	{/* hw:x,41 */
+		.name = "MSM8X16 Compress13",
+		.stream_name = "Compress13",
+		.cpu_dai_name	= "MultiMedia28",
+		.platform_name  = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			 SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA28,
+	},
+	{/* hw:x,42 */
+		.name = "MSM8X16 Compress14",
+		.stream_name = "Compress14",
+		.cpu_dai_name	= "MultiMedia29",
+		.platform_name  = "msm-compress-dsp",
+		.dynamic = 1,
+		.dpcm_capture = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			 SND_SOC_DPCM_TRIGGER_POST},
+		.codec_dai_name = "snd-soc-dummy-dai",
+		.codec_name = "snd-soc-dummy",
+		.ignore_suspend = 1,
+		.ignore_pmdown_time = 1,
+		.be_id = MSM_FRONTEND_DAI_MULTIMEDIA29,
 	},
 	/* Backend I2S DAI Links */
 	{
