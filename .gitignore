@@ -37,6 +37,9 @@ modules.builtin
 Module.symvers
 *.dwo
 
+# Out Directory
+out/
+
 #
 # Top-level generic files
 #
